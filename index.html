@@ -15,6 +15,7 @@
 
   <h1>Examen Interactivo</h1>
   <div id="quiz-container"></div>
+  
 
   <script>
     const preguntas = [
@@ -870,9 +871,38 @@
  
     ];
 
-    const contenedor = document.getElementById("quiz-container");
+    let puntaje = 0;
+  let respondidas = 0;
 
-    preguntas.forEach((q, index) => {
+  const contenedor = document.getElementById("quiz-container");
+
+  // Crear barra de progreso
+  const barraProgreso = document.createElement("div");
+  barraProgreso.style.background = "#ccc";
+  barraProgreso.style.height = "20px";
+  barraProgreso.style.borderRadius = "10px";
+  barraProgreso.style.marginBottom = "20px";
+  barraProgreso.innerHTML = '<div id="progreso" style="height:100%; width:0%; background:#4caf50; border-radius:10px;"></div>';
+  document.body.insertBefore(barraProgreso, contenedor);
+
+  // Crear contador de puntaje
+  const marcador = document.createElement("div");
+  marcador.id = "puntaje";
+  marcador.style.marginBottom = "20px";
+  marcador.style.fontWeight = "bold";
+  marcador.textContent = "Puntaje: 0 / " + preguntas.length;
+  document.body.insertBefore(marcador, contenedor);
+
+  // Función para mezclar un array (Fisher-Yates)
+  function mezclar(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+
+  preguntas.forEach((q, index) => {
     const div = document.createElement("div");
     div.className = "question-container";
 
@@ -880,25 +910,47 @@
     preguntaEl.textContent = `${index + 1}. ${q.pregunta}`;
     div.appendChild(preguntaEl);
 
-    q.opciones.forEach((opcion, i) => {
+    // Mezclar las opciones con su índice
+    const opciones = q.opciones.map((texto, idx) => ({ texto, idx }));
+    const mezcladas = mezclar(opciones);
+
+    mezcladas.forEach((opcionObj) => {
       const btn = document.createElement("button");
-      btn.textContent = opcion;
+      btn.textContent = opcionObj.texto;
       btn.onclick = () => {
-        if (i === q.respuesta) {
+        if (btn.disabled) return;
+
+        if (opcionObj.idx === q.respuesta) {
           btn.classList.add("correct");
           btn.textContent += " ✅ ¡Correcto!";
-          // Desactiva todos los botones cuando acierta
-          const botones = div.querySelectorAll("button");
-          botones.forEach(b => b.disabled = true);
+          puntaje++;
+          actualizarPuntaje();
+          bloquearBotones(div);
         } else {
           btn.classList.add("incorrect");
           btn.textContent += " ❌ Intenta de nuevo.";
-          btn.disabled = true; // Solo desactiva este botón incorrecto
+          btn.disabled = true;
         }
+        actualizarProgreso();
       };
       div.appendChild(btn);
     });
 
     contenedor.appendChild(div);
   });
+
+  function actualizarPuntaje() {
+    document.getElementById("puntaje").textContent = `Puntaje: ${puntaje} / ${preguntas.length}`;
+  }
+
+  function actualizarProgreso() {
+    respondidas++;
+    const porcentaje = (respondidas / preguntas.length) * 100;
+    document.getElementById("progreso").style.width = porcentaje + "%";
+  }
+
+  function bloquearBotones(container) {
+    const botones = container.querySelectorAll("button");
+    botones.forEach(b => b.disabled = true);
+  }
 </script>
